@@ -574,6 +574,13 @@ fn rich_block_build(
 	} else {
 		(None, None, None, None)
 	};
+
+	let base_fee = if cfg!(feature = "no-base-fee-in-rich-block") {
+		None
+	} else {
+		base_fee
+	};
+
 	Rich {
 		inner: Block {
 			header: Header {

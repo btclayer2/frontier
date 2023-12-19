@@ -81,3 +81,4 @@ rocksdb = [
 ]
 txpool = ["fc-rpc-core/txpool"]
 rpc-binary-search-estimate = []
+no-base-fee-in-rich-block = []
