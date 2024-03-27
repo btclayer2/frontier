@@ -132,6 +132,10 @@ pub struct EthConfiguration {
 	/// Bound the size of memory, stack and storage data.
 	#[arg(long, default_value = "20000000")]
 	pub tracing_raw_max_memory_usage: usize,
+
+	/// Timeout for eth logs query RPCs in seconds. (default 10)
+	#[arg(long, default_value = "10")]
+	pub logs_request_timeout: u64,
 }
 
 pub struct FrontierPartialComponents {
