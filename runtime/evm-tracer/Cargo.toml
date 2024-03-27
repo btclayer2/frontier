@@ -12,7 +12,7 @@ fp-ext = { workspace = true }
 fp-rpc-evm-tracing-events = { workspace = true, features = ["evm-tracing"] }
 
 # Substrate
-codec = { package = "parity-scale-codec", version = "3.2.2", features = ["std"] }
+codec = { package = "parity-scale-codec", version = "3.6.9", features = ["std"] }
 sp-core = { workspace = true }
 sp-io = { workspace = true }
 sp-runtime = { workspace = true }
