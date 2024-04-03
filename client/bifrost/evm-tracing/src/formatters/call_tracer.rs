@@ -191,10 +191,15 @@ impl super::ResponseFormatter for Formatter {
 										..
 									}),
 								) => {
-									&b[..]
-										== a.get(0..a.len() - 1).expect(
-											"non-root element while traversing trace result",
-										)
+									match a.get(0..a.len() - 1) {
+										Some(slice) => {
+											&b[..] == slice
+										}
+										// "non-root element while traversing trace result"
+										None => {
+											false
+										}
+									}
 								}
 								_ => unreachable!(),
 							}) {
