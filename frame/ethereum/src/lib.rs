@@ -1104,6 +1104,14 @@ impl From<TransactionValidationError> for InvalidTransactionWrapper {
 #[derive(TypeInfo, PartialEq, Eq, Clone, Debug, Encode, Decode)]
 pub struct FakeTransactionFinalizer<T>(PhantomData<T>);
 
+
+impl<T: Config + Send + Sync> FakeTransactionFinalizer<T> {
+	/// Creates new `SignedExtension` to fake transaction finalizer.
+	pub fn new() -> Self {
+		Self(PhantomData)
+	}
+}
+
 impl<T: Config + TypeInfo + core::fmt::Debug + Send + Sync> sp_runtime::traits::SignedExtension
 for FakeTransactionFinalizer<T>
 {
