@@ -67,6 +67,9 @@ pub use fp_rpc::TransactionStatus;
 use fp_storage::{EthereumStorageSchema, PALLET_ETHEREUM_SCHEMA};
 use pallet_evm::{BlockHashMapping, FeeCalculator, GasWeightMapping, Runner};
 
+// Unique,BEVM
+use pallet_evm::CurrentLogs;
+
 #[derive(Clone, Eq, PartialEq, RuntimeDebug)]
 #[derive(Encode, Decode, MaxEncodedLen, TypeInfo)]
 pub enum RawOrigin {
@@ -74,8 +77,8 @@ pub enum RawOrigin {
 }
 
 pub fn ensure_ethereum_transaction<OuterOrigin>(o: OuterOrigin) -> Result<H160, &'static str>
-where
-	OuterOrigin: Into<Result<RawOrigin, OuterOrigin>>,
+	where
+		OuterOrigin: Into<Result<RawOrigin, OuterOrigin>>,
 {
 	match o.into() {
 		Ok(RawOrigin::EthereumTransaction(n)) => Ok(n),
@@ -85,7 +88,7 @@ where
 
 pub struct EnsureEthereumTransaction;
 impl<O: Into<Result<RawOrigin, O>> + From<RawOrigin>> EnsureOrigin<O>
-	for EnsureEthereumTransaction
+for EnsureEthereumTransaction
 {
 	type Success = H160;
 	fn try_origin(o: O) -> Result<Self::Success, O> {
@@ -101,10 +104,10 @@ impl<O: Into<Result<RawOrigin, O>> + From<RawOrigin>> EnsureOrigin<O>
 }
 
 impl<T> Call<T>
-where
-	OriginFor<T>: Into<Result<RawOrigin, OriginFor<T>>>,
-	T: Send + Sync + Config,
-	T::RuntimeCall: Dispatchable<Info = DispatchInfo, PostInfo = PostDispatchInfo>,
+	where
+		OriginFor<T>: Into<Result<RawOrigin, OriginFor<T>>>,
+		T: Send + Sync + Config,
+		T::RuntimeCall: Dispatchable<Info = DispatchInfo, PostInfo = PostDispatchInfo>,
 {
 	pub fn is_self_contained(&self) -> bool {
 		matches!(self, Call::transact { .. })
@@ -225,6 +228,7 @@ pub mod pallet {
 				));
 			}
 			Pending::<T>::kill();
+			assert_eq!(<CurrentLogs<T>>::get().len(), 0, "fake transaction finalizer is not initialized, as some logs was left after block is finished");
 		}
 
 		fn on_initialize(_: BlockNumberFor<T>) -> Weight {
@@ -269,17 +273,17 @@ pub mod pallet {
 
 	#[pallet::call]
 	impl<T: Config> Pallet<T>
-	where
-		OriginFor<T>: Into<Result<RawOrigin, OriginFor<T>>>,
+		where
+			OriginFor<T>: Into<Result<RawOrigin, OriginFor<T>>>,
 	{
 		/// Transact an Ethereum transaction.
 		#[pallet::call_index(0)]
 		#[pallet::weight({
-			let without_base_extrinsic_weight = true;
-			<T as pallet_evm::Config>::GasWeightMapping::gas_to_weight({
-				let transaction_data: TransactionData = transaction.into();
-				transaction_data.gas_limit.unique_saturated_into()
-			}, without_base_extrinsic_weight)
+		let without_base_extrinsic_weight = true;
+		<T as pallet_evm::Config>::GasWeightMapping::gas_to_weight({
+		let transaction_data: TransactionData = transaction.into();
+		transaction_data.gas_limit.unique_saturated_into()
+		}, without_base_extrinsic_weight)
 		})]
 		pub fn transact(
 			origin: OriginFor<T>,
@@ -320,7 +324,7 @@ pub mod pallet {
 	/// Current building block's transactions and receipts.
 	#[pallet::storage]
 	pub(super) type Pending<T: Config> =
-		StorageValue<_, Vec<(Transaction, TransactionStatus, Receipt)>, ValueQuery>;
+	StorageValue<_, Vec<(Transaction, TransactionStatus, Receipt)>, ValueQuery>;
 
 	/// The current Ethereum block.
 	#[pallet::storage]
@@ -420,7 +424,7 @@ impl<T: Config> Pallet<T> {
 				}
 			};
 			cumulative_gas_used = used_gas;
-			Self::logs_bloom(logs, &mut logs_bloom);
+			Self::logs_bloom(logs.iter(), &mut logs_bloom);
 		}
 
 		let ommers = Vec::<ethereum::Header>::new();
@@ -472,10 +476,10 @@ impl<T: Config> Pallet<T> {
 		}
 	}
 
-	fn logs_bloom(logs: Vec<Log>, bloom: &mut Bloom) {
+	fn logs_bloom<'a>(logs: impl IntoIterator<Item = &'a Log>, bloom: &'a mut Bloom) {
 		for log in logs {
 			bloom.accrue(BloomInput::Raw(&log.address[..]));
-			for topic in log.topics {
+			for topic in &log.topics {
 				bloom.accrue(BloomInput::Raw(&topic[..]));
 			}
 		}
@@ -506,11 +510,11 @@ impl<T: Config> Pallet<T> {
 			weight_limit,
 			proof_size_base_cost,
 		)
-		.validate_in_pool_for(&who)
-		.and_then(|v| v.with_chain_id())
-		.and_then(|v| v.with_base_fee())
-		.and_then(|v| v.with_balance_for(&who))
-		.map_err(|e| e.0)?;
+			.validate_in_pool_for(&who)
+			.and_then(|v| v.with_chain_id())
+			.and_then(|v| v.with_base_fee())
+			.and_then(|v| v.with_balance_for(&who))
+			.map_err(|e| e.0)?;
 
 		// EIP-3607: https://eips.ethereum.org/EIPS/eip-3607
 		// Do not allow transactions for which `tx.sender` has any code deployed.
@@ -571,70 +575,76 @@ impl<T: Config> Pallet<T> {
 		let transaction_index = pending.len() as u32;
 
 		let (reason, status, weight_info, used_gas, dest, extra_data) = match info.clone() {
-			CallOrCreateInfo::Call(info) => (
-				info.exit_reason.clone(),
-				TransactionStatus {
-					transaction_hash,
-					transaction_index,
-					from: source,
-					to,
-					contract_address: None,
-					logs: info.logs.clone(),
-					logs_bloom: {
-						let mut bloom: Bloom = Bloom::default();
-						Self::logs_bloom(info.logs, &mut bloom);
-						bloom
+			CallOrCreateInfo::Call(info) => {
+				let logs = <CurrentLogs<T>>::take();
+				(
+					info.exit_reason.clone(),
+					TransactionStatus {
+						transaction_hash,
+						transaction_index,
+						from: source,
+						to,
+						contract_address: None,
+						logs_bloom: {
+							let mut bloom: Bloom = Bloom::default();
+							Self::logs_bloom(logs.iter(), &mut bloom);
+							bloom
+						},
+						logs,
 					},
-				},
-				info.weight_info,
-				info.used_gas,
-				to,
-				match info.exit_reason {
-					ExitReason::Revert(_) => {
-						const LEN_START: usize = 36;
-						const MESSAGE_START: usize = 68;
+					info.weight_info,
+					info.used_gas,
+					to,
+					match info.exit_reason {
+						ExitReason::Revert(_) => {
+							const LEN_START: usize = 36;
+							const MESSAGE_START: usize = 68;
 
-						let data = info.value;
-						let data_len = data.len();
-						if data_len > MESSAGE_START {
-							let message_len = U256::from(&data[LEN_START..MESSAGE_START])
-								.saturated_into::<usize>();
-							let message_end = MESSAGE_START.saturating_add(
-								message_len.min(T::ExtraDataLength::get() as usize),
-							);
+							let data = info.value;
+							let data_len = data.len();
+							if data_len > MESSAGE_START {
+								let message_len = U256::from(&data[LEN_START..MESSAGE_START])
+									.saturated_into::<usize>();
+								let message_end = MESSAGE_START.saturating_add(
+									message_len.min(T::ExtraDataLength::get() as usize),
+								);
 
-							if data_len >= message_end {
-								data[MESSAGE_START..message_end].to_vec()
+								if data_len >= message_end {
+									data[MESSAGE_START..message_end].to_vec()
+								} else {
+									data
+								}
 							} else {
 								data
 							}
-						} else {
-							data
 						}
-					}
-					_ => vec![],
-				},
-			),
-			CallOrCreateInfo::Create(info) => (
-				info.exit_reason,
-				TransactionStatus {
-					transaction_hash,
-					transaction_index,
-					from: source,
-					to,
-					contract_address: Some(info.value),
-					logs: info.logs.clone(),
-					logs_bloom: {
-						let mut bloom: Bloom = Bloom::default();
-						Self::logs_bloom(info.logs, &mut bloom);
-						bloom
+						_ => vec![],
 					},
-				},
-				info.weight_info,
-				info.used_gas,
-				Some(info.value),
-				Vec::new(),
-			),
+				)
+			},
+			CallOrCreateInfo::Create(info) => {
+				let logs = <CurrentLogs<T>>::take();
+				(
+					info.exit_reason,
+					TransactionStatus {
+						transaction_hash,
+						transaction_index,
+						from: source,
+						to,
+						contract_address: Some(info.value),
+						logs_bloom: {
+							let mut bloom: Bloom = Bloom::default();
+							Self::logs_bloom(logs.iter(), &mut bloom);
+							bloom
+						},
+						logs
+					},
+					info.weight_info,
+					info.used_gas,
+					Some(info.value),
+					Vec::new(),
+				)
+			},
 		};
 
 		let receipt = {
@@ -874,11 +884,11 @@ impl<T: Config> Pallet<T> {
 			weight_limit,
 			proof_size_base_cost,
 		)
-		.validate_in_block_for(&who)
-		.and_then(|v| v.with_chain_id())
-		.and_then(|v| v.with_base_fee())
-		.and_then(|v| v.with_balance_for(&who))
-		.map_err(|e| TransactionValidityError::Invalid(e.0))?;
+			.validate_in_block_for(&who)
+			.and_then(|v| v.with_chain_id())
+			.and_then(|v| v.with_base_fee())
+			.and_then(|v| v.with_balance_for(&who))
+			.map_err(|e| TransactionValidityError::Invalid(e.0))?;
 
 		Ok(())
 	}
@@ -930,7 +940,7 @@ impl<T: Config> Pallet<T> {
 		let (v0_number, v0_parent_hash, v0_transaction_len): (U256, H256, u64) = Decode::decode(
 			&mut v0_data.as_slice(),
 		)
-		.expect("the state parameter should be something that was generated by pre_upgrade");
+			.expect("the state parameter should be something that was generated by pre_upgrade");
 		let item = b"CurrentBlock";
 		let block_v2 = frame_support::storage::migration::get_storage_value::<ethereum::BlockV2>(
 			Self::name().as_bytes(),
