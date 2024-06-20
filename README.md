@@ -10,7 +10,7 @@ Frontier is the EVM backbone of Polkadot.
 Frontier provides a compatibility layer of EVM, so that you can run any Ethereum
 dapps on Polkadot, unmodified. Using Frontier, you get access to all of the
 Ethereum RPC APIs you are already familiar with, and therefore you can continue
-to develop your dapps in your favourite Ethereum developer tools. As a bonus,
+to develop your dapps in your favorite Ethereum developer tools. As a bonus,
 you can even run many Ethereum L2s inside Frontier!
 
 Frontier is also a migration framework. Besides the common strategy of direct

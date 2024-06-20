@@ -10,7 +10,7 @@ features:
 - title: RPC Compatibility
   details: All existing Ethereum RPC methods work, so none of your dapps will break.
 - title: Substrate Module
-  details: Frontier can be easily integrated in your existing Substrate application as a runtime module.
+  details: Frontier can be easily integrated into your existing Substrate application as a runtime module.
 footer: Made by Parity & Wei & PureStake with ❤️
 ---
 

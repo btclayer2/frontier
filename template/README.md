@@ -71,7 +71,7 @@ Alice's EVM account will be funded with a large amount of Ether. The
 [Polkadot UI](https://polkadot.js.org/apps/#?rpc=ws://127.0.0.1:9944) can be used to see the details
 of Alice's EVM account. In order to view an EVM account, use the `Developer` tab of the Polkadot UI
 `Settings` app to define the EVM `Account` type as below. It is also necessary to define the
-`Address` and `LookupSource` to send transaction, and `Transaction` and `Signature` to be able to
+`Address` and `LookupSource` to send transactions, and `Transaction` and `Signature` to be able to
 inspect blocks:
 
 ```json
