@@ -235,7 +235,7 @@ fn main() {
 	let commit_id = get_git_commit_id(&options.node_template);
 	let top_level_cargo_toml_path = node_template_path.join("Cargo.toml");
 
-	// Check if top level Cargo.toml exists. If not, create one in the destination
+	// Check if top-level Cargo.toml exists. If not, create one in the destination
 	if !cargo_tomls.contains(&top_level_cargo_toml_path) {
 		// create the top_level_cargo_toml
 		OpenOptions::new()
