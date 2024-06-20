@@ -19,7 +19,7 @@
         ```
 
 3.  Expand the output tar gzipped file that is created in the top level working dir of Frontier and
-    replace files in current Frontier Node Template by running the following command:
+    replace files in the current Frontier Node Template by running the following command:
 
         ```bash
         # Note the file will be placed in the top level working dir of Frontier
