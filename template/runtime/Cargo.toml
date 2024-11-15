@@ -109,8 +109,8 @@ std = [
 
 	"fp-rpc-debug/std",
 	"fp-rpc-txpool/std",
-	"evm-tracer/std",
-	"fp-rpc-evm-tracing-events/std",
+	"evm-tracer?/std",
+	"fp-rpc-evm-tracing-events?/std",
 
 	# Frontier FRAME
 	"pallet-base-fee/std",

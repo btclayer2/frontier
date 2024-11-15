@@ -118,7 +118,7 @@ impl PrecompileHandle for MockHandle {
 		if self
 			.record_cost(crate::evm::costs::call_cost(
 				context.apparent_value,
-				&evm::Config::london(),
+				&evm::Config::cancun(),
 			))
 			.is_err()
 		{
@@ -208,6 +208,7 @@ impl PrecompileHandle for MockHandle {
 		&mut self,
 		_ref_time: Option<u64>,
 		_proof_size: Option<u64>,
+		_storage_growth: Option<u64>,
 	) -> Result<(), ExitError> {
 		Ok(())
 	}

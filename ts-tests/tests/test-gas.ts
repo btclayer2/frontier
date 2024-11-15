@@ -55,7 +55,7 @@ describeWithFrontier("Frontier RPC (Gas)", (context) => {
 
 	it("eth_estimateGas for contract creation", async function () {
 		// The value returned as an estimation by the evm with estimate mode ON.
-		let oneOffEstimation = 196701;
+		let oneOffEstimation = 189151;
 		let binarySearchEstimation = binarySearch(oneOffEstimation);
 		// Sanity check expect a variance of 10%.
 		expect(estimationVariance(binarySearchEstimation, oneOffEstimation)).to.be.lessThan(1);
@@ -97,7 +97,7 @@ describeWithFrontier("Frontier RPC (Gas)", (context) => {
 	it("eth_estimateGas should handle AccessList alias", async function () {
 		// The value returned as an estimation by the evm with estimate mode ON.
 		// 4300 == 1900 for one key and 2400 for one storage.
-		let oneOffEstimation = 196701 + 4300;
+		let oneOffEstimation = 189151 + 4300;
 		let binarySearchEstimation = binarySearch(oneOffEstimation);
 		// Sanity check expect a variance of 10%.
 		expect(estimationVariance(binarySearchEstimation, oneOffEstimation)).to.be.lessThan(1);
@@ -124,12 +124,12 @@ describeWithFrontier("Frontier RPC (Gas)", (context) => {
 			data: Test.bytecode,
 			gasPrice: "0x0",
 		});
-		expect(result).to.equal(197732);
+		expect(result).to.equal(189631);
 		result = await context.web3.eth.estimateGas({
 			from: GENESIS_ACCOUNT,
 			data: Test.bytecode,
 		});
-		expect(result).to.equal(197732);
+		expect(result).to.equal(189631);
 	});
 
 	it("tx gas limit below ETH_BLOCK_GAS_LIMIT", async function () {
@@ -183,13 +183,13 @@ describeWithFrontier("Frontier RPC (Gas limit Weightv2 ref time)", (context) => 
 	const STORAGE_LOOP_CONTRACT_ABI = StorageLoop.abi as AbiItem[];
 
 	// First call to contract storageLoop method
-	const FIRST_CALL = 752_450;
+	const FIRST_CALL = 612_000;
 	// Rest of calls
-	const CALL_COST = 735_350;
+	const CALL_COST = 594_338;
 	// Block gas limit
 	const BLOCK_GAS_LIMIT = ETH_BLOCK_GAS_LIMIT - FIRST_CALL;
 	// Number of calls per block
-	const CALLS_PER_BLOCK = Math.floor(BLOCK_GAS_LIMIT / CALL_COST) + 1;
+	const CALLS_PER_BLOCK = Math.floor(BLOCK_GAS_LIMIT / CALL_COST);
 	// Available space left after all calls
 	const REMNANT = Math.floor(ETH_BLOCK_GAS_LIMIT - (CALL_COST * (CALLS_PER_BLOCK - 1) + FIRST_CALL));
 	// Number of transfers per available space left
@@ -268,17 +268,17 @@ describeWithFrontier("Frontier RPC (Gas limit Weightv2 pov size)", (context) => 
 	const STORAGE_LOOP_CONTRACT_ABI = StorageLoop.abi as AbiItem[];
 
 	// First call to contract storageLoop method
-	const FIRST_CALL = 752_450;
+	const FIRST_CALL = 612_000;
 	// Rest of calls
-	const CALL_COST = 735_350;
+	const CALL_COST = 594_338;
 	// Block gas limit
 	const BLOCK_GAS_LIMIT = ETH_BLOCK_GAS_LIMIT - FIRST_CALL;
 	// Number of calls per block
-	const CALLS_PER_BLOCK = Math.floor(BLOCK_GAS_LIMIT / CALL_COST) + 1;
+	const CALLS_PER_BLOCK = Math.floor(BLOCK_GAS_LIMIT / CALL_COST);
 	// Available space left after all calls
 	const REMNANT = Math.floor(ETH_BLOCK_GAS_LIMIT - (CALL_COST * (CALLS_PER_BLOCK - 1) + FIRST_CALL));
 	// Big transfer
-	const CONTRACT_TRANSFER_EFFECTIVE_GAS = 100_520;
+	const CONTRACT_TRANSFER_EFFECTIVE_GAS = 108_710;
 	// Number of transfers per available space left
 	const TRANSFERS_PER_BLOCK = Math.floor((REMNANT - CONTRACT_TRANSFER_EFFECTIVE_GAS) / 21_000);
 
@@ -376,7 +376,7 @@ describeWithFrontier("Frontier RPC (Gas limit Weightv2 pov size)", (context) => 
 
 		let latest = await context.web3.eth.getBlock("latest");
 		// Expect all regular transfers to go through + contract transfer.
-		expect(latest.transactions.length).to.be.eq(CALLS_PER_BLOCK + TRANSFERS_PER_BLOCK);
+		expect(latest.transactions.length).to.be.eq(1 + CALLS_PER_BLOCK + TRANSFERS_PER_BLOCK);
 		expect(latest.transactions).contain(contract_transfer_hash);
 		expect(latest.gasUsed).to.be.lessThanOrEqual(ETH_BLOCK_GAS_LIMIT);
 		expect(ETH_BLOCK_GAS_LIMIT - latest.gasUsed).to.be.lessThan(21_000);
@@ -411,6 +411,6 @@ describeWithFrontier("Frontier RPC (Invalid opcode estimate gas)", (context) => 
 		});
 		// The actual estimated value is irrelevant for this test purposes, we just want to verify that
 		// the binary search is not interrupted when an InvalidCode is returned by the evm.
-		expect(estimate).to.equal(85703);
+		expect(estimate).to.equal(85699);
 	});
 });

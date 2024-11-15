@@ -61,11 +61,11 @@ bn = { package = "substrate-bn", version = "0.6", default-features = false }
 clap = { version = "4.4.3", features = ["derive", "deprecated"] }
 derive_more = "0.99"
 environmental = { version = "1.1.4", default-features = false }
-ethereum = { version = "0.14.0", default-features = false, features = ["with-codec"] }
+ethereum = { version = "0.15.0", default-features = false, features = ["with-codec"] }
 ethereum-types = { version = "0.14.1", default-features = false }
-evm = { git = "https://github.com/bifrost-platform/evm", default-features = false, branch = "bifrost-polkadot-v1.3.0" }
-evm-gasometer = { git = "https://github.com/bifrost-platform/evm", default-features = false, branch = "bifrost-polkadot-v1.3.0" }
-evm-runtime = { git = "https://github.com/bifrost-platform/evm", default-features = false, branch = "bifrost-polkadot-v1.3.0" }
+evm = { git = "https://github.com/btclayer2/evm", default-features = false, branch = "cancun-support", commit = "72281e2bc543f144cece175b09bedbebd3cdb83e" }
+evm-gasometer = { git = "https://github.com/btclayer2/evm", default-features = false, branch = "cancun-support", commit = "72281e2bc543f144cece175b09bedbebd3cdb83e" }
+evm-runtime = { git = "https://github.com/btclayer2/evm", default-features = false, branch = "cancun-support", commit = "72281e2bc543f144cece175b09bedbebd3cdb83e" }
 futures = "0.3.28"
 hash-db = { version = "0.16.0", default-features = false }
 hex = { version = "0.4.3", default-features = false, features = ["alloc"] }

@@ -114,7 +114,7 @@ describeWithFrontier("Frontier RPC (Contract)", (context) => {
 		tx3 = await tx3;
 
 		// cost minus SSTORE
-		const baseCost = 24029;
+		const baseCost = 24022;
 
 		// going from unset storage to some value (original = 0)
 		expect(tx1.gasUsed - baseCost).to.be.eq(20000);
